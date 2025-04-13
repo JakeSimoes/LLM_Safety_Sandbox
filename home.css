@@ -1,0 +1,115 @@
+@font-face {
+    font-family: "Metropolis";
+    src: url("../Metropolis-Thin.ttf");
+}
+
+body {
+    background-color: var(--back-color);
+    font-family: "Metropolis";
+    height: 100vh;
+    overflow: hidden;
+}
+
+:root {
+    --back-color: #BBE7E6;
+    --panel-color-selected: #009AA6;
+    --panel-color-deselected: #006265;
+    --off-white: #F3F3F3;
+    --llm-green: #32D17E;
+}
+
+.panel {
+    background: var(--panel-color-selected);
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: clamp(200px, 20%, 400px);
+    height: 100%;
+    border-left: 1px solid black;
+}
+
+.selector {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.selector img {
+    width: clamp(25px, 18%, 100px);
+    padding-left: 5%;
+    padding-right: 5%;
+    padding-top: 3%;
+    padding-bottom: 3%;
+}
+
+#deselected {
+    background: var(--panel-color-deselected);
+}
+
+.chat {
+    overflow-y: scroll;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - clamp(200px, 20%, 400px));
+    align-items: center;
+}
+
+.chat::-webkit-scrollbar {
+    width: 0px; /* For vertical scrollbars */
+    height: 0px; /* For horizontal scrollbars */
+}
+
+#spacer {
+    padding-top: 180px;
+}
+
+.user-text-box, .llm-text-box, #user-input-box {
+    font-size: 100%;
+    font-weight: bold;
+    text-align: center;
+    word-break: break-word;
+    border-radius: 25px;
+    padding: 10px;
+}
+
+.user-text-box {
+    width: 40%;
+    background: var(--off-white);
+    margin-left: 40%;
+
+}
+
+.llm-text-box {
+    width: 70%;
+    background: var(--llm-green);
+    margin-right: 10%;
+
+}
+
+.user-input {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - clamp(200px, 20%, 400px));
+    align-items: center;
+    position: absolute;
+    bottom: 5%;
+    left: 0px;
+}
+
+#user-input-box {
+    background: var(--off-white);
+    width: 70%;
+}
+
+.footer {
+    font-size: 50%;
+    display: flex;
+    align-items: center;
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    background-color: var(--panel-color-deselected);
+    width: calc(100% - clamp(200px, 20%, 400px));
+}
