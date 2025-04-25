@@ -42,7 +42,7 @@ body {
     padding-bottom: 3%;
 }
 
-#deselected {
+.selector img.deselected {
     background: var(--panel-color-deselected);
 }
 
@@ -67,7 +67,7 @@ body {
 .user-text-box, .llm-text-box, #user-input-box {
     font-size: 100%;
     font-weight: bold;
-    text-align: center;
+    text-align: left;
     word-break: break-word;
     border-radius: 25px;
     padding: 10px;
@@ -99,8 +99,18 @@ body {
 }
 
 #user-input-box {
+    font-family: inherit;
+    font-size: inherit;
+    field-sizing: content;
+    resize: none;
+    spellcheck: true;
+    text-align: left;
     background: var(--off-white);
     width: 70%;
+}
+
+#user-input-box:focus {
+    outline: none;
 }
 
 .footer {
