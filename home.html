@@ -23,7 +23,23 @@
 
         <div class="user-input">
              <textarea id="user-input-box" placeholder="Type Something..." maxlength="3000"></textarea>
+
+             <label for="file-upload" class="file-upload-label" title="Upload file">
+                 <img src="paperclip.png" alt="Upload file icon">
+             </label>
+             <input type="file" id="file-upload" style="display: none;">
+
+<!--            <div id="file-selector-box">-->
+<!--                <div id="file-selector-banner">File Selection   <button id="file-selector-close">X</button></div>-->
+<!--                <div class = "file-selector">-->
+<!--                    <div class="file"><p>filename.pnggggggg</p> <img src="document.png" class="thumbnail-image"> <a href="malstuff/Dog Deals!.pdf" class="view-button-anchor" target="_blank"><img src="eye.png" class="view-button"></a></div>-->
+<!--                    <div class="file"><p>filename.pnggggggg</p> <img src="document.png" class="thumbnail-image"> <a href="document.png" class="view-button-anchor" target="_blank"><img src="eye.png" class="view-button"></a></div>-->
+<!--                    <div class="file"><p>filename.pnggggggg</p> <img src="image.png" class="thumbnail-image"> <a href="image.png" class="view-button-anchor" target="_blank"><img src="eye.png" class="view-button"></a></div>-->
+<!--                    <div class="file"><p>filename.pnggggggg</p> <img src="image.png" class="thumbnail-image"> <a href="image.png" class="view-button-anchor" target="_blank"><img src="eye.png" class="view-button"></a></div>-->
+<!--                </div>-->
+<!--            </div>-->
         </div>
+
 
         <div class="footer">
             <h2 style="padding-left: 5px; color: white;">Jake Simoes</h2>
@@ -32,4 +48,10 @@
     </body>
 </html>
 
-<script src="run.js"></script>
+<script src="pdf.min.mjs" type="module"></script>
+<script id="script" type="module">
+
+
+</script>
+<script src="marked.min.js"></script>
+<script src="run.js" type="module"></script>
