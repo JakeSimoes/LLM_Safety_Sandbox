@@ -1,6 +1,6 @@
 @font-face {
     font-family: "Metropolis";
-    src: url("../Metropolis-Thin.ttf");
+    src: url("../fonts/Metropolis-Thin.ttf");
 }
 
 body {
@@ -28,20 +28,97 @@ hr {
     --llm-green: #32D17E;
 }
 
-.panel {
+.pane {
+    display: flex;
+    flex-direction: column;
     background: var(--panel-color-selected);
     position: absolute;
     top: 0px;
     right: 0px;
     width: clamp(200px, 20%, 400px);
     height: 100%;
-    border-left: 1px solid black;
 }
 
 .selector {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+}
+
+#shield-panel {
+    height: 100%;
+}
+
+.panel-option {
+    display: flex;
+    flex-direction: column;
+    color: white;
+    align-items: center;
+    padding-bottom: 10px;
+}
+
+.segmented-control-bar {
+    display: flex;
+    flex-direction: row;
+    width: 70%;
+    justify-content: space-evenly;
+}
+
+.segmented-control-bar input {
+    display: none;
+}
+
+.segmented-control-bar label {
+    background-color: var(--panel-color-deselected);
+    text-align: center;
+    padding: 10px;
+    width: 100%;
+    height: 100%;
+}
+
+#extraction-radio + label {
+        border-radius: 20px 0px 0px 20px;
+}
+
+#OCR-radio + label {
+        border-radius: 0px 20px 20px 0px;
+}
+
+[name~="PDF-segment-input"]:checked + label {
+  background-color: var(--deselected-secondary-tone);
+}
+
+#filter-on-radio + label {
+        border-radius: 0px 20px 20px 0px;
+}
+
+#filter-off-radio + label {
+        border-radius: 20px 0px 0px 20px;
+}
+
+[name~="filter-segment-input"]:checked + label {
+  background-color: var(--deselected-secondary-tone);
+}
+
+#LLM-filter-on-radio + label {
+        border-radius: 0px 20px 20px 0px;
+}
+
+#LLM-filter-off-radio + label {
+        border-radius: 20px 0px 0px 20px;
+}
+
+[name~="LLM-filter-segment-input"]:checked + label {
+  background-color: var(--deselected-secondary-tone);
+}
+
+#anon-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    color: white;
+    text-align: center;
+    justify-items: center;
 }
 
 .selector img {
@@ -95,7 +172,18 @@ div.user-text-box, div.llm-text-box, #user-input-box {
     width: 70%;
     background: var(--llm-green);
     margin-right: 10%;
+}
 
+.llm-text-box-data-panel {
+    font-size: 100%;
+    font-weight: bold;
+    text-align: left;
+    word-break: break-word;
+    border-radius: 25px;
+    padding: 10px;
+    margin-bottom: 20px;
+    width: 70%;
+    background: var(--llm-green);
 }
 
 .user-input {
@@ -130,103 +218,8 @@ div.user-text-box, div.llm-text-box, #user-input-box {
     vertical-align: middle;
 }
 
-
 #user-input-box:focus {
     outline: none;
-}
-
-#file-selector-box {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    margin-bottom: 70px;
-    background-color: var(--panel-color-selected);
-    border: solid 3px;
-    border-color: var(--panel-color-deselected);
-    border-radius: 10px;
-    width: 70%;
-    height: 80vh;
-}
-
-.file-selector {
-    display: flex;
-    flex-wrap: wrap;
-    overflow: hidden;
-    overflow-y: scroll;
-    padding-top: 20px;
-}
-
-.file-selector::-webkit-scrollbar {
-    width: 0px; /* For vertical scrollbars */
-    height: 0px; /* For horizontal scrollbars */
-}
-
-.thumbnail-image {
-    height: 128px;
-    width: 128px;
-    padding: 10px;
-    cursor: pointer;
-}
-
-.thumbnail-image:hover  {
-    background: green;
-}
-#file-selector-banner {
-    display: flex;
-    background-color: var(--panel-color-deselected);
-    color: white;
-    font-size: 30px;
-    padding: 5px 0px 0px 10px;
-    font-weight: bold;
-}
-
-#file-selector-close {
-    margin-left: auto;
-    font-size: 30px;
-    color: white;
-    background-color: var(--panel-color-deselected);
-    border: none;
-    cursor: pointer;
-}
-
-.file  {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: var(--panel-color-deselected);
-    border-radius: 5px;
-    margin-left: 10px;
-    overflow: hidden;
-}
-
-.file p {
-    margin-left: 5px;
-    min-width: 100%;
-    width: 0;
-    overflow-x: scroll;
-    color: white;
-    background-color: var(--deselected-secondary-tone);
-    font-weight: bold;
-    border-radius: 5px 5px 0px 0px;
-    justify-content: center;
-    padding: 5px;
-}
-
-.file p::-webkit-scrollbar {
-    width: 0px; /* For vertical scrollbars */
-    height: 0px; /* For horizontal scrollbars */
-}
-
-.view-button {
-    height: 30px;
-    width: 30px;
-}
-
-.view-button-anchor {
-    padding-left: 50%;
-    padding-right: 50%;
-    background-color: var(--deselected-secondary-tone);
-    cursor: pointer;
 }
 
 .footer {

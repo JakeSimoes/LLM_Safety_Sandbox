@@ -10,10 +10,48 @@
     <body>
         <h1>LLM Safety Sandbox</h1>
 
-        <div class="panel">
+        <div class="pane">
             <div class="selector">
-                    <img src="shield.png" id="shield-selector" class="deselected" alt="LLM Security Options">
-                    <img src="anon.png" id="anon-selector" alt="Exfiltrated Information">
+                    <img src="images/shield.png" id="shield-selector" alt="LLM Security Options">
+                    <img src="images/anon.png" id="anon-selector" class="deselected" alt="Exfiltrated Information">
+            </div>
+
+            <div id="shield-panel">
+                <div class="panel-option"><h2>PDF Ingestion Method</h2>
+                    <div class="segmented-control-bar">
+                          <input id="extraction-radio" type="radio" name="PDF-segment-input" checked>
+                          <label for="extraction-radio">Extraction</label>
+
+                          <input id="OCR-radio" type="radio" name="PDF-segment-input">
+                          <label for="OCR-radio">OCR</label>
+                    </div>
+                </div>
+
+                <div class="panel-option"><h2>Text-Comparison Filtering</h2>
+                    <div class="segmented-control-bar">
+                          <input id="filter-off-radio" type="radio" name="filter-segment-input" checked>
+                          <label for="filter-off-radio">Off</label>
+
+                          <input id="filter-on-radio" type="radio" name="filter-segment-input">
+                          <label for="filter-on-radio">On</label>
+                    </div>
+                </div>
+
+                <div class="panel-option"><h2>Secondary LLM Filtering</h2>
+                    <div class="segmented-control-bar">
+                          <input id="LLM-filter-off-radio" type="radio" name="LLM-filter-segment-input" checked>
+                          <label for="LLM-filter-off-radio">Off</label>
+
+                          <input id="LLM-filter-on-radio" type="radio" name="LLM-filter-segment-input">
+                          <label for="LLM-filter-on-radio">On</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="anon-panel" style="display: none;">
+                <h2>Exfiltrated Data</h2>
+                <div class="llm-text-box-data-panel">The user really likes dogs...</div>
+                <div class="llm-text-box-data-panel">The user really likes dogs...</div>
             </div>
         </div>
 
@@ -25,33 +63,20 @@
              <textarea id="user-input-box" placeholder="Type Something..." maxlength="3000"></textarea>
 
              <label for="file-upload" class="file-upload-label" title="Upload file">
-                 <img src="paperclip.png" alt="Upload file icon">
+                 <img src="images/paperclip.png" alt="Upload file icon">
              </label>
              <input type="file" id="file-upload" style="display: none;">
-
-<!--            <div id="file-selector-box">-->
-<!--                <div id="file-selector-banner">File Selection   <button id="file-selector-close">X</button></div>-->
-<!--                <div class = "file-selector">-->
-<!--                    <div class="file"><p>filename.pnggggggg</p> <img src="document.png" class="thumbnail-image"> <a href="malstuff/Dog Deals!.pdf" class="view-button-anchor" target="_blank"><img src="eye.png" class="view-button"></a></div>-->
-<!--                    <div class="file"><p>filename.pnggggggg</p> <img src="document.png" class="thumbnail-image"> <a href="document.png" class="view-button-anchor" target="_blank"><img src="eye.png" class="view-button"></a></div>-->
-<!--                    <div class="file"><p>filename.pnggggggg</p> <img src="image.png" class="thumbnail-image"> <a href="image.png" class="view-button-anchor" target="_blank"><img src="eye.png" class="view-button"></a></div>-->
-<!--                    <div class="file"><p>filename.pnggggggg</p> <img src="image.png" class="thumbnail-image"> <a href="image.png" class="view-button-anchor" target="_blank"><img src="eye.png" class="view-button"></a></div>-->
-<!--                </div>-->
-<!--            </div>-->
         </div>
 
 
         <div class="footer">
             <h2 style="padding-left: 5px; color: white;">Jake Simoes</h2>
-            <a href="https://github.com/JakeSimoes" style="display: flex; padding-left: 5px;"><img src="git.png" style="height:1vmax;"></a>
+            <a href="https://github.com/JakeSimoes" style="display: flex; padding-left: 5px;"><img src="images/git.png" style="height:1vmax;"></a>
         </div>
     </body>
 </html>
 
-<script src="pdf.min.mjs" type="module"></script>
-<script id="script" type="module">
-
-
-</script>
-<script src="marked.min.js"></script>
-<script src="run.js" type="module"></script>
+<script src="scripts/scribe.js" type="module"></script>
+<script src="scripts/pdf.min.mjs" type="module"></script>
+<script src="scripts/marked.min.js"></script>
+<script src="scripts/run.js" type="module"></script>

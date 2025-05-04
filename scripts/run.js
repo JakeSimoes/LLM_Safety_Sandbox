@@ -1,3 +1,16 @@
+// Yes yes, I know. Object Oriented Design rules over the Java kingdom.
+// I forwent such classical design as I'm deficient in JavaScript acumen.
+// Alas, I beg thee! Forgive this transient shortcoming!!!
+//
+//scribe.extractText(['https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'])
+//	.then((res) => console.log(res))
+
+import scribe from './scribe.js'; // Handles PDF OCR and extraction (Overjoyed I only found this after implementing extraction another way, why why why why).
+
+//scribe.opt.usePDFText.ocr.main = true;
+//scribe.opt.usePDFText.native.main = false;
+        console.log(scribe.opt);
+
 import * as pdfjsLib from "./pdf.min.mjs"; // Used for PDF text extraction
 pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs'; // Required to use pdf.js
 
@@ -5,12 +18,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs'; // Required to use 
 const shieldImage = document.getElementById('shield-selector');
 const anonImage = document.getElementById('anon-selector');
 const userInputBox = document.getElementById('user-input-box');
-//const fileSelectionButton = document.getElementById('file-selector');
-//const fileSelectorBox = document.getElementById('file-selector-box');
-//const fileSelectorCloseButton = document.getElementById('file-selector-close');
+const shieldPanel = document.getElementById('shield-panel');
+const anonPanel = document.getElementById('anon-panel');
 const fileInput = document.getElementById('file-upload');
 const chatArea = document.getElementById('chat-area');
 const spacer = document.getElementById('spacer'); //
+
+// Getting references to our radio button elements...
+const extractionRadio = document.getElementById('extraction-radio');
+const filterRadio = document.getElementById('filter-off-radio');
+const llmFilterRadio = document.getElementById('LLM-filter-segment-input');
 
 // Our local server
 const endpoint = 'http://localhost:1234/v1/chat/completions';
@@ -19,7 +36,7 @@ const endpoint = 'http://localhost:1234/v1/chat/completions';
 // This includes the entire message history which is stored in messages
 let request = {
     "model": "model-identifier",
-    "temperature": 0.8,
+    "temperature": 0.1,
     "max_tokens": -1,
     "messages": []
 }
@@ -31,12 +48,16 @@ let attachments = []
 function selectShield() {
     shieldImage.classList.remove('deselected'); // Remove .deselected from shield
     anonImage.classList.add('deselected'); // Add .deselected to anon
+    shieldPanel.style.display = "block";
+    anonPanel.style.display = "none";
 }
 
 // Function to handle clicks on the anon image
 function selectAnon() {
     anonImage.classList.remove('deselected'); // Remove .deselected from anon
     shieldImage.classList.add('deselected'); // Add .deselected to shield
+    shieldPanel.style.display = "none";
+    anonPanel.style.display = "block";
 }
 
 /**
@@ -131,22 +152,6 @@ function newImageContent(imageBase64) {
 }
 
 /**
- * Embeds file data into a OpenAI API compatible JSON object.
- * @param {string} fileBase64 - A base 64 string containing a pdf file.
- */
-function newFileContent(fileBase64) {
-    let newImageContent = {
-        "type": "file",
-        "file": {
-            "file_data": fileBase64,
-        }
-    }
-
-    return newImageContent;
-}
-
-
-/**
  * Sends user requests to the server, then displays and stores the response
  */
 async function sendRequest() {
@@ -177,15 +182,6 @@ async function sendRequest() {
     userInputBox.setAttribute("placeholder", "Type Something...");
 }
 
-// Toggles the file selection window
-//function fileSelectWindowToggle() {
-//    if (fileSelectorBox.style.display == 'none') {
-//        fileSelectorBox.style.display = 'flex';
-//    } else {
-//        fileSelectorBox.style.display = 'none';
-//    }
-//}
-
 /**
  * Reads file data and parses it into the proper JSON objects. Results are added to the global attachments array.
  * @param {event} event - A file upload event.
@@ -195,25 +191,52 @@ async function fileParsing(event) {
 
     if (!file) return; // You never know
 
-    try {
-        const base64String = await convertFileToBase64(file);
-    } catch (error) {
-        console.error('Error converting to Base64:', error);
-        return;
-    }
-
     // Depending on whether or not we're reading a PDF or PNG, there are very different steps
     if (file.name.slice(-4) == '.pdf') {
-        const textData = await extractPdfText(base64String);
-        const newContent = newFileContent(textData);
+        // Need to tell Scribe.js not to supplement one method with the other
+        if (extractionRadio.checked) {
+            scribe.opt.usePDFText.ocr.main = false;
+            scribe.opt.usePDFText.ocr.supp = false;
+            scribe.opt.usePDFText.native.supp = true;
+            scribe.opt.usePDFText.native.main = true;
+        } else {
+            scribe.opt.usePDFText.ocr.main = true;
+            scribe.opt.usePDFText.ocr.supp = true;
+            scribe.opt.usePDFText.native.supp = false;
+            scribe.opt.usePDFText.native.main = false;
+        }
+
+        // Asking Scribed to analyze our PDF with either extraction or OCR
+        const text = await scribe.extractText(event.target.files, ['eng'], 'txt', {skipRecPDFTextNative: extractionRadio.checked});
+
+        console.log(text);
+        // "The following content is a user supplied PDF file:" +
+        const newContent = newTextContent("The document is:\n" + text);
         attachments.push(newContent);
     } else {
-        const base64String = await convertFileToBase64(file);
+        let base64String = "";
+
+
+        // The OpenAI API needs images in base64 format.
+        try {
+            base64String = await convertFileToBase64(file);
+        } catch (error) {
+            console.error('Error converting to Base64:', error);
+            return;
+        }
+
         const newContent = newImageContent(base64String);
         attachments.push(newContent)
     }
+
+    fileInput.value = null;
 }
 
+/**
+ * Reads file data and converts it into base64 code.
+ * @param {File} file - A File object.
+ * @returns {string} A base64 conversion of the file data.
+ */
 function convertFileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -231,94 +254,21 @@ function convertFileToBase64(file) {
     });
 }
 
-// Honor Note: The below function is completely AI generated. It turns out PDF extraction is hard, really hard.
-// Furthermore, there doesn't seem to be a simple library that just does it. In the interest of time and my sanity, the
-// following function was generated by Gemini.
-
-/**
- * Extracts text content from all pages of a PDF provided as a Base64 data URL.
- * Uses pdf.js library. Attempts to minimize extra whitespace using trimming and enhanced regex cleanup.
- * @param {string} pdfBase64 - The Base64 encoded data URL of the PDF file (e.g., "data:application/pdf;base64,...").
- * @returns {Promise<string>} A promise that resolves with the extracted text from all pages,
- *                            joined by double newlines. Returns an empty string if an error occurs,
- *                            the PDF has no pages, or no text is found.
- */
-async function extractPdfText(pdfBase64) {
-    // pdfjsLib.getDocument expects a URL, ArrayBuffer, TypedArray, or a Base64 data URL.
-    const loadingTask = pdfjsLib.getDocument(pdfBase64);
-
-    try {
-        // Wait for the PDF document to be loaded
-        const pdf = await loadingTask.promise;
-        console.log('PDF loaded successfully.');
-
-        const numPages = pdf.numPages;
-        if (numPages === 0) {
-            console.warn('PDF has no pages.');
-            return ''; // No text to extract if there are no pages
-        }
-
-        const pagePromises = [];
-        // Create an array of promises, one for each page's text extraction
-        for (let i = 1; i <= numPages; i++) {
-            pagePromises.push(
-                // Get the page object (returns a promise)
-                pdf.getPage(i).then(page => {
-                    // Get the text content object (returns a promise)
-                    return page.getTextContent().then(textContent => {
-                        // 1. Map items to trimmed strings and filter empty ones
-                        let pageText = textContent.items
-                            .map(item => item.str.trim())
-                            .filter(str => str.length > 0)
-                            .join(' '); // Join with a single space initially
-
-                        // --- Start of enhanced cleanup ---
-                        // 2. Apply regex replacements for common spacing issues
-                        pageText = pageText
-                            // Replace multiple whitespace characters with a single space
-                            .replace(/\s+/g, ' ')
-                            // Remove space BEFORE common punctuation: .,;:)!?)]} and closing quotes/parentheses
-                            .replace(/\s+([.,;:)!?\]\}\)"'])/g, '$1')
-                            // Remove space AFTER opening brackets/quotes: ([{'"
-                            .replace(/([(\[{'""])\s+/g, '$1')
-                            // --- New/Modified Rules ---
-                            // Remove space around hyphens when used between word characters (like starch - rich)
-                            .replace(/(\w)\s+-\s+(\w)/g, '$1-$2') // Handles space on both sides
-                            .replace(/(\w)\s+-/g, '$1-') // Handles space only before hyphen
-                            .replace(/-\s+(\w)/g, '-$1') // Handles space only after hyphen
-                            // --- End New/Modified Rules ---
-                            .trim(); // Trim again in case regex leaves leading/trailing space
-                        // --- End of enhanced cleanup ---
-
-                        return pageText;
-                    });
-                })
-            );
-        }
-
-        // Wait for all page text extraction promises to resolve
-        const pageTexts = await Promise.all(pagePromises);
-
-        // Join the text from all pages, separated by double newlines for readability
-        // Also filter out any pages that might have ended up completely empty
-        const fullText = pageTexts
-            .filter(text => text.length > 0) // Remove empty pages
-            .join('\n\n')
-            .trim(); // Final trim for the whole text
-        console.log(`Successfully extracted text from ${numPages} pages.`);
-        return fullText;
-
-    } catch (error) {
-        console.error('Error extracting text from PDF:', error);
-        // Return an empty string in case of errors to prevent breaking the calling code
-        return '';
+function reset() {
+    request = {
+    "model": "model-identifier",
+    "temperature": 0.8,
+    "max_tokens": -1,
+    "messages": []
     }
+
+    attachments = [];
+
+    chatArea.innerHTML = "<div id='spacer'></div>";
 }
 
 // Attach the functions to the 'click' event of each image
 shieldImage.addEventListener('click', selectShield);
 anonImage.addEventListener('click', selectAnon);
 userInputBox.addEventListener('keydown', submitPrompt);
-//fileSelectionButton.onclick = fileSelectWindowToggle;
-//fileSelectorCloseButton.onclick = fileSelectWindowToggle;
 fileInput.addEventListener('change', fileParsing);
