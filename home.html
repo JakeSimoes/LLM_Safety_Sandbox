@@ -35,6 +35,8 @@
                           <input id="filter-on-radio" type="radio" name="filter-segment-input">
                           <label for="filter-on-radio">On</label>
                     </div>
+                    <h3>Filtered Phrases (comma separated):</h3>
+                    <textarea id="phrase-filter-content"></textarea>
                 </div>
 
                 <div class="panel-option"><h2>Secondary LLM Filtering</h2>
@@ -45,13 +47,17 @@
                           <input id="LLM-filter-on-radio" type="radio" name="LLM-filter-segment-input">
                           <label for="LLM-filter-on-radio">On</label>
                     </div>
+                    <h3>System Prompt:</h3>
+                    <textarea id="llm-filter-prompt">You are a content-filtering system for our local LLMs. You're tasked with analyzing whether or not the last assistant response provided violates any ethical principles. Remember, users should never be exposed to harmful content.
+
+You will only be provided assistant messages. After analyzing them, respond with a single word. If the content you received is safe, reply "safe." Otherwise, if the content can bring harm to the user or is distasteful in any manner, reply "unsafe."
+                    </textarea>
                 </div>
             </div>
 
             <div id="anon-panel" style="display: none;">
-                <h2>Exfiltrated Data</h2>
-                <div class="llm-text-box-data-panel">The user really likes dogs...</div>
-                <div class="llm-text-box-data-panel">The user really likes dogs...</div>
+                <h2 id="anon-title">Exfiltrated Data</h2>
+                <div id="anon-panel-end"></div>
             </div>
         </div>
 

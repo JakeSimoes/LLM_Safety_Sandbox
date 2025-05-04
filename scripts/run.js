@@ -1,20 +1,12 @@
 // Yes yes, I know. Object Oriented Design rules over the Java kingdom.
 // I forwent such classical design as I'm deficient in JavaScript acumen.
 // Alas, I beg thee! Forgive this transient shortcoming!!!
-//
-//scribe.extractText(['https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'])
-//	.then((res) => console.log(res))
 
 import scribe from './scribe.js'; // Handles PDF OCR and extraction (Overjoyed I only found this after implementing extraction another way, why why why why).
-
-//scribe.opt.usePDFText.ocr.main = true;
-//scribe.opt.usePDFText.native.main = false;
-        console.log(scribe.opt);
-
 import * as pdfjsLib from "./pdf.min.mjs"; // Used for PDF text extraction
 pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs'; // Required to use pdf.js
 
-// Getting references to the image elements using their IDs
+// Getting references to key HTML elements using their IDs
 const shieldImage = document.getElementById('shield-selector');
 const anonImage = document.getElementById('anon-selector');
 const userInputBox = document.getElementById('user-input-box');
@@ -22,12 +14,13 @@ const shieldPanel = document.getElementById('shield-panel');
 const anonPanel = document.getElementById('anon-panel');
 const fileInput = document.getElementById('file-upload');
 const chatArea = document.getElementById('chat-area');
-const spacer = document.getElementById('spacer'); //
-
-// Getting references to our radio button elements...
+const spacer = document.getElementById('spacer');
+const anonPanelEnd = document.getElementById('anon-panel-end');
 const extractionRadio = document.getElementById('extraction-radio');
 const filterRadio = document.getElementById('filter-off-radio');
-const llmFilterRadio = document.getElementById('LLM-filter-segment-input');
+const llmFilterRadio = document.getElementById('LLM-filter-off-radio');
+const llmFilterPrompt = document.getElementById('llm-filter-prompt');
+const phraseFilterContent = document.getElementById('phrase-filter-content');
 
 // Our local server
 const endpoint = 'http://localhost:1234/v1/chat/completions';
@@ -63,7 +56,7 @@ function selectAnon() {
 /**
  * Handles messaging, from sending user input to displaying the response.
  * @param {string} text - Plaintext user input.
- * @param {string} sender - 'user' or 'llm', sets what kind of bubble is generated.
+ * @param {string} sender - 'user' or 'llm' or 'filtered', sets what kind of bubble is generated.
  */
 function displayMessage(text, sender) {
     // Create a new message paragraph and set its text content
@@ -73,8 +66,10 @@ function displayMessage(text, sender) {
     // Set its type based on the sender
     if (sender == 'user') {
         message.classList.add('user-text-box');
-    } else {
+    } else if (sender == 'llm') {
         message.classList.add('llm-text-box');
+    } else {
+        message.classList.add('filtered-text-box');
     }
 
     // Insert our new message before the spacer
@@ -86,7 +81,7 @@ function displayMessage(text, sender) {
  * Handles messaging, from sending user input to displaying the response.
  * @param {event} event - A keyboard event
  */
-function submitPrompt(event) {
+async function submitPrompt(event) {
     // Only triggered with a enter + ctrl combo!!!
     if (event.key == 'Enter' && event.ctrlKey) {
         // Display our message
@@ -117,7 +112,29 @@ function submitPrompt(event) {
 
         // Building the final message and sending it
         request.messages.push(newUserMessage);
-        sendRequest();
+        const llmResponse = await sendRequest(request);
+
+        // Checking for any secret exfiltration strings.
+        secretStringExtractor(llmResponse.content);
+
+        // If either of our enabled options takes issue with our content filtered = true
+        let filtered = false;
+
+        if (!llmFilterRadio.checked) {
+            filtered = await isLLMFiltered(llmResponse.content);
+        }
+
+        if (!filterRadio.checked && !filtered) {
+            filtered = isTextFiltered(llmResponse.content);
+        }
+
+        // Displaying and storing the response
+        displayMessage(marked.parse(llmResponse.content), filtered ? 'filtered' : 'llm');
+        request.messages.push(llmResponse);
+
+        // Enabling user input
+        userInputBox.removeAttribute("disabled");
+        userInputBox.setAttribute("placeholder", "Type Something...");
     }
 }
 
@@ -153,15 +170,17 @@ function newImageContent(imageBase64) {
 
 /**
  * Sends user requests to the server, then displays and stores the response
+ * @param {json} newRequest - A properly formatted request object.
+ * @returns {json} The content of the message returned by the server.
  */
-async function sendRequest() {
+async function sendRequest(newRequest) {
     const response = await fetch(endpoint, {
         method: "POST",
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request)
+        body: JSON.stringify(newRequest)
     })
 
     if (!response.ok) {
@@ -171,15 +190,114 @@ async function sendRequest() {
 
     // Parsing our response data
     const responseData = await response.json();
-    let llmResponse = responseData.choices[0].message.content;
+    let llmResponse = responseData.choices[0].message;
+    return await llmResponse;
+}
 
-    // Displaying and storing the response
-    displayMessage(marked.parse(llmResponse), 'llm');
-    request.messages.push(responseData.choices[0].message);
+/**
+ * Has an LLM check if the input text follows the LLMFilter system prompt guidelines.
+ * The system prompt should ultimately ask the LLM to output safe or unsafe.
+ * @param {string} text - The text to check against.
+ * @returns {boolean} False if the LLM returns 'safe' true otherwise.
+ */
+async function isLLMFiltered(text) {
+        // We can start with a clean slate every call
+        let llmFilterRequest = {
+            "model": "model-identifier",
+            "temperature": 0.1,
+            "max_tokens": -1,
+            "messages": []
+        }
 
-    // Enabling user input
-    userInputBox.removeAttribute("disabled");
-    userInputBox.setAttribute("placeholder", "Type Something...");
+        // We need to give our initial prompt as a system message
+        let newSystemMessage = {
+            "role": "system",
+            "content": []
+        }
+
+        // Creating a new text JSON object
+        newSystemMessage.content.push(newTextContent(llmFilterPrompt.value));
+
+        // And the content to be filtered as a user message.
+        let newUserMessage = {
+            "role": "user",
+            "content": []
+        }
+
+        // Creating a new text JSON object
+        newUserMessage.content.push(newTextContent(text));
+
+        llmFilterRequest.messages.push(newSystemMessage);
+        llmFilterRequest.messages.push(newUserMessage);
+
+        let llmResponse = await sendRequest(llmFilterRequest);
+        console.log(llmResponse.content);
+        return llmResponse.content.trim() !== 'safe';
+}
+
+// The below is AI generated because I'm short on time. I never formally learned JS so I've been fighting demons
+// like promises and whatnot.
+
+/**
+ * Checks if the input text contains any of the phrases specified in the phraseFilterContent input box.
+ * Phrases in the input box should be separated by commas.
+ * @param {string} text - The text to check against the filter phrases.
+ * @returns {boolean} True if any filter phrase is found in the text, false otherwise.
+ */
+function isTextFiltered(text) {
+    // 1. Get the raw filter phrases from the input element
+    const filterPhrasesRaw = phraseFilterContent.value;
+
+    // 2. Handle empty or whitespace-only filter input
+    if (!filterPhrasesRaw || !filterPhrasesRaw.trim()) {
+        return false; // No phrases to filter by
+    }
+
+    // 3. Split the raw string into an array of phrases, trim whitespace from each, and filter out empty strings
+    const filterPhrases = filterPhrasesRaw
+        .split(',') // Split by comma
+        .map(phrase => phrase.trim()) // Remove leading/trailing whitespace from each potential phrase
+        .filter(phrase => phrase.length > 0); // Remove any empty strings resulting from extra commas (e.g., "a,,b")
+
+    // 4. Check if the filter phrase list is empty after processing
+    if (filterPhrases.length === 0) {
+        return false;
+    }
+
+    // 5. Iterate through the cleaned filter phrases
+    for (const phrase of filterPhrases) {
+        // 6. Check if the current phrase exists within the input text.
+        //    Using includes() for simple substring matching.
+        //    Using toLowerCase() on both makes the check case-insensitive.
+        if (text.toLowerCase().includes(phrase.toLowerCase())) {
+            return true; // Found a match, no need to check further
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Checks if the input text has any <secret> </secret> strings and sends their contents to the anon panel.
+ * @param {string} text - The text to check for secret strings.
+ */
+function secretStringExtractor(text) {
+    const re = new RegExp("<secret>.*</secret>");
+
+    const matches = re.exec(text);
+
+    if (matches) {
+            for (const match of matches) {
+    console.log(match);
+        let message = document.createElement('div');
+         message.classList.add('llm-text-box-data-panel');
+        message.innerHTML = match;
+        anonPanel.insertBefore(message, anonPanelEnd);
+    }
+    }
+
+
+
 }
 
 /**
@@ -254,6 +372,7 @@ function convertFileToBase64(file) {
     });
 }
 
+// debug function
 function reset() {
     request = {
     "model": "model-identifier",
@@ -267,7 +386,7 @@ function reset() {
     chatArea.innerHTML = "<div id='spacer'></div>";
 }
 
-// Attach the functions to the 'click' event of each image
+// Attaching functions to the 'click' event of key buttons.
 shieldImage.addEventListener('click', selectShield);
 anonImage.addEventListener('click', selectAnon);
 userInputBox.addEventListener('keydown', submitPrompt);
